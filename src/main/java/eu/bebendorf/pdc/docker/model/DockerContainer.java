@@ -3,6 +3,7 @@ package eu.bebendorf.pdc.docker.model;
 import com.google.gson.annotations.SerializedName;
 import eu.bebendorf.pdc.docker.DockerClient;
 import eu.bebendorf.pdc.exception.RequestException;
+import eu.bebendorf.pdc.utils.WebSocket;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -66,5 +67,20 @@ public class DockerContainer {
     }
     public void remove(boolean removeVolumes, boolean force, boolean removeLink) throws RequestException {
         client.removeContainer(id, removeVolumes, force, removeLink);
+    }
+    public WebSocket attach(){
+        return client.attachContainer(id);
+    }
+    public String logs() throws RequestException {
+        return client.containerLogs(id);
+    }
+    public String logs(Integer since, Integer until) throws RequestException {
+        return client.containerLogs(id, since, until);
+    }
+    public String logs(Integer limit) throws RequestException {
+        return client.containerLogs(id, limit);
+    }
+    public String logs(Integer since, Integer until, Integer limit) throws RequestException {
+        return client.containerLogs(id, since, until, limit);
     }
 }

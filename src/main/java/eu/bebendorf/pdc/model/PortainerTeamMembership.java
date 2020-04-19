@@ -1,7 +1,7 @@
 package eu.bebendorf.pdc.model;
 
 import com.google.gson.annotations.SerializedName;
-import eu.bebendorf.pdc.PortainerDockerClient;
+import eu.bebendorf.pdc.PortainerClient;
 import eu.bebendorf.pdc.exception.RequestException;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -12,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 public class PortainerTeamMembership {
     @Setter
-    PortainerDockerClient client;
+    PortainerClient client;
     @SerializedName("Id")
     Integer id;
     @SerializedName("UserID")

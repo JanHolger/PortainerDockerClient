@@ -3,6 +3,7 @@ package eu.bebendorf.pdc.http;
 import com.google.gson.Gson;
 import eu.bebendorf.pdc.exception.RequestException;
 import eu.bebendorf.pdc.utils.MultipartRequest;
+import eu.bebendorf.pdc.utils.WebSocket;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,6 +11,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -75,31 +77,35 @@ public class HttpClient {
                 os.close();
             }
             responseCode = conn.getResponseCode();
-            BufferedReader rd;
             if(responseCode>299){
-                rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                result.append(readAll(conn.getErrorStream()));
             }else{
-                rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                result.append(readAll(conn.getInputStream()));
             }
-            String line;
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
-            }
-            rd.close();
         }catch(Exception e){
             try {
                 responseCode = conn.getResponseCode();
-                BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-                String line;
-                while ((line = rd.readLine()) != null) {
-                    result.append(line);
-                }
-                rd.close();
-                return new HttpResponse(responseCode, result.toString());
+                return new HttpResponse(responseCode, readAll(conn.getErrorStream()));
             }catch(IOException | NullPointerException ex){}
             return new HttpResponse(responseCode, result.toString());
         }
         return new HttpResponse(responseCode, result.toString());
+    }
+
+    private static String readAll(InputStream is) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] data = new byte[1024];
+        int r;
+        while (is.available() > 0){
+            r = is.read(data);
+            baos.write(data, 0, r);
+        }
+        is.close();
+        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    public WebSocket webSocket(String url){
+        return new WebSocket(address.replace("http", "ws") + url);
     }
 
     public static String urlEncode(String value){

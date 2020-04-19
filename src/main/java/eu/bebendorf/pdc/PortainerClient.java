@@ -18,12 +18,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class PortainerDockerClient {
+public class PortainerClient {
 
     @Getter
     private HttpClient httpClient;
 
-    public PortainerDockerClient(String address, String username, String password) throws PortainerAuthException {
+    public PortainerClient(String address, String username, String password) throws PortainerAuthException {
         this.httpClient = new HttpClient("http://"+(address.contains(":")?address:(address+":9000"))+"/api");
         try {
             PortainerAuthResponse response = httpClient.request("POST", "/auth", new PortainerAuthRequest(username, password), PortainerAuthResponse.class);

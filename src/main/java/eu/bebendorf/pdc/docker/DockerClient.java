@@ -1,13 +1,17 @@
 package eu.bebendorf.pdc.docker;
 
+import eu.bebendorf.pdc.PortainerClient;
 import eu.bebendorf.pdc.docker.model.*;
 import eu.bebendorf.pdc.exception.RequestException;
 import eu.bebendorf.pdc.http.HttpClient;
+import eu.bebendorf.pdc.model.PortainerEndpoint;
 import eu.bebendorf.pdc.request.DockerContainerCreateRequest;
 import eu.bebendorf.pdc.request.DockerVolumeCreateRequest;
 import eu.bebendorf.pdc.response.DockerContainerCreateResponse;
 import eu.bebendorf.pdc.response.DockerVolumePruneResponse;
+import eu.bebendorf.pdc.utils.WebSocket;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 public class DockerClient {
+
+    @Getter @Setter
+    private PortainerEndpoint portainerEndpoint;
 
     @Getter
     private HttpClient httpClient;
@@ -111,8 +118,57 @@ public class DockerClient {
         return httpClient.request("POST", "/volumes/create", request, DockerVolume.class);
     }
 
+    public void removeVolume(String name) throws RequestException {
+        removeVolume(name, false);
+    }
+
+    public void removeVolume(String name, boolean force) throws RequestException {
+        httpClient.request("DELETE", "/volumes/"+name+(force?"?force=true":""), null);
+    }
+
     public DockerVolumePruneResponse pruneVolumes(VolumePruneFilter... filters) throws RequestException {
         return httpClient.request("POST", "/volumes/prune?filters="+HttpClient.urlEncode(DockerFilter.json(filters)), DockerVolumePruneResponse.class);
+    }
+
+    public WebSocket attachContainer(String id){
+        Map<String, String> params = new HashMap<>();
+        if(portainerEndpoint == null){
+            params.put("stdin", "true");
+            params.put("stdout", "true");
+            params.put("stderr", "true");
+            params.put("logs", "false");
+            params.put("stream", "true");
+            return httpClient.webSocket("/containers/"+id+"/attach/ws?"+HttpClient.queryParams(params));
+        }
+        params.put("token", httpClient.getToken());
+        params.put("endpointId", String.valueOf(portainerEndpoint.getId()));
+        params.put("id", id);
+        return portainerEndpoint.getClient().getHttpClient().webSocket("/websocket/attach?"+HttpClient.queryParams(params));
+    }
+
+    public String containerLogs(String id) throws RequestException {
+        return containerLogs(id, null, null, null);
+    }
+
+    public String containerLogs(String id, Integer since, Integer until) throws RequestException {
+        return containerLogs(id, since, until, null);
+    }
+
+    public String containerLogs(String id, Integer limit) throws RequestException {
+        return containerLogs(id, null, null, limit);
+    }
+
+    public String containerLogs(String id, Integer since, Integer until, Integer limit) throws RequestException {
+        Map<String, String> params = new HashMap<>();
+        params.put("stdout", "true");
+        params.put("stderr", "true");
+        if(since != null)
+            params.put("since", String.valueOf(since));
+        if(until != null)
+            params.put("until", String.valueOf(until));
+        if(limit != null)
+            params.put("limit", String.valueOf(limit));
+        return httpClient.request("GET", "/containers/"+id+"/logs?"+HttpClient.queryParams(params), String.class);
     }
 
 }

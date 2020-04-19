@@ -3,7 +3,7 @@ package eu.bebendorf.pdc.model;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import eu.bebendorf.pdc.http.HttpClient;
-import eu.bebendorf.pdc.PortainerDockerClient;
+import eu.bebendorf.pdc.PortainerClient;
 import eu.bebendorf.pdc.docker.DockerClient;
 import eu.bebendorf.pdc.exception.RequestException;
 import lombok.*;
@@ -16,8 +16,8 @@ import java.util.Map;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PortainerEndpoint {
-    @Setter
-    PortainerDockerClient client;
+    @Setter @Getter
+    PortainerClient client;
     @SerializedName("Id") @Getter
     Integer id;
     @SerializedName("Name") @Getter
@@ -90,6 +90,8 @@ public class PortainerEndpoint {
     public DockerClient getDocker(){
         HttpClient httpClient = new HttpClient(client.getHttpClient().getAddress()+"/endpoints/"+id+"/docker");
         httpClient.setToken(client.getHttpClient().getToken());
-        return new DockerClient(httpClient);
+        DockerClient dockerClient = new DockerClient(httpClient);
+        dockerClient.setPortainerEndpoint(this);
+        return dockerClient;
     }
 }

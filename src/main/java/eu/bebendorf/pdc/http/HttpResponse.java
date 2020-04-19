@@ -21,6 +21,8 @@ public class HttpResponse {
     }
 
     public <T> T getBody(Class<T> clazz){
+        if(clazz.equals(String.class))
+            return (T) getBody();
         return GSON.fromJson(body, clazz);
     }
 

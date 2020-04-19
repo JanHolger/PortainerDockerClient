@@ -33,6 +33,6 @@ public class DockerVolume {
         remove(false);
     }
     public void remove(boolean force) throws RequestException {
-        client.getHttpClient().request("DELETE", "/volumes/"+name+(force?"?force=true":""), null);
+        client.removeVolume(name, force);
     }
 }
