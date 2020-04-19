@@ -29,7 +29,7 @@ public class DockerContainerCreateRequest {
     Boolean attachStderr;
     @SerializedName("ExposedPorts")
     Map<String, JsonObject> exposedPorts = new HashMap<>();
-    @SerializedName("Tty") @Setter
+    @SerializedName("Tty")
     Boolean tty;
     @SerializedName("OpenStdin")
     Boolean openStdin;
@@ -137,6 +137,10 @@ public class DockerContainerCreateRequest {
     }
     public DockerContainerCreateRequest attachStderr(boolean attachStderr){
         this.attachStderr = attachStderr;
+        return this;
+    }
+    public DockerContainerCreateRequest setTty(boolean tty){
+        this.tty = tty;
         return this;
     }
 }

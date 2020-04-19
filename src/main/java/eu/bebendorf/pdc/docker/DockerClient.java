@@ -1,10 +1,12 @@
 package eu.bebendorf.pdc.docker;
 
-import eu.bebendorf.pdc.docker.model.ContainerFilter;
-import eu.bebendorf.pdc.docker.model.DockerContainer;
-import eu.bebendorf.pdc.docker.model.DockerFilter;
+import eu.bebendorf.pdc.docker.model.*;
 import eu.bebendorf.pdc.exception.RequestException;
 import eu.bebendorf.pdc.http.HttpClient;
+import eu.bebendorf.pdc.request.DockerContainerCreateRequest;
+import eu.bebendorf.pdc.request.DockerVolumeCreateRequest;
+import eu.bebendorf.pdc.response.DockerContainerCreateResponse;
+import eu.bebendorf.pdc.response.DockerVolumePruneResponse;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -82,6 +84,35 @@ public class DockerClient {
         params.put("force", force?"true":"false");
         params.put("link", removeLink?"true":"false");
         httpClient.request("DELETE", "/containers/"+id+"?"+HttpClient.queryParams(params), null);
+    }
+
+    public String createContainer(DockerContainerCreateRequest request) throws RequestException {
+        return httpClient.request("POST", "/containers/create", request, DockerContainerCreateResponse.class).getId();
+    }
+
+    public String createContainer(String name, DockerContainerCreateRequest request) throws RequestException {
+        return httpClient.request("POST", "/containers/create?name="+HttpClient.urlEncode(name), request, DockerContainerCreateResponse.class).getId();
+    }
+
+    public List<DockerVolume> getVolumes(VolumeFilter... filters) throws RequestException {
+        List<DockerVolume> volumes = new ArrayList<>();
+        for(DockerVolume volume : httpClient.request("GET", "/volumes?filters="+HttpClient.urlEncode(DockerFilter.json(filters)), DockerVolume[].class)){
+            volume.setClient(this);
+            volumes.add(volume);
+        }
+        return volumes;
+    }
+
+    public DockerVolume getVolume(String name) throws RequestException {
+        return httpClient.request("GET", "/volumes/"+name, DockerVolume.class);
+    }
+
+    public DockerVolume createVolume(DockerVolumeCreateRequest request) throws RequestException {
+        return httpClient.request("POST", "/volumes/create", request, DockerVolume.class);
+    }
+
+    public DockerVolumePruneResponse pruneVolumes(VolumePruneFilter... filters) throws RequestException {
+        return httpClient.request("POST", "/volumes/prune?filters="+HttpClient.urlEncode(DockerFilter.json(filters)), DockerVolumePruneResponse.class);
     }
 
 }

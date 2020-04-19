@@ -24,7 +24,7 @@ public class DockerHostConfig {
     @SerializedName("CpuShares") @Setter @Getter
     Integer cpuShares;
     @SerializedName("PortBindings")
-    Map<String, List<JsonObject>> portBindings;
+    Map<String, List<JsonObject>> portBindings = new HashMap<>();
     @SerializedName("RestartPolicy")
     Map<String, Object> restartPolicy;
     @SerializedName("AutoRemove") @Setter @Getter
