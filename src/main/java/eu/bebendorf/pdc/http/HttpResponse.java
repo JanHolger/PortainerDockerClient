@@ -28,7 +28,6 @@ public class HttpResponse {
 
     public <T> T getBodyOrError(Class<T> responseType) throws RequestException {
         if(!isSuccess()){
-            System.out.println(getBody());
             throw new RequestException(getBody(PortainerErrorResponse.class));
         }
         if(responseType != null){
