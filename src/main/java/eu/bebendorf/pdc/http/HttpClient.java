@@ -78,27 +78,28 @@ public class HttpClient {
             }
             responseCode = conn.getResponseCode();
             if(responseCode>299){
-                result.append(readAll(conn.getErrorStream()));
+                result.append(readAll(conn.getErrorStream(), conn.getHeaderFieldInt("Content-Length", -1)));
             }else{
-                result.append(readAll(conn.getInputStream()));
+                result.append(readAll(conn.getInputStream(), conn.getHeaderFieldInt("Content-Length", -1)));
             }
         }catch(Exception e){
             try {
                 responseCode = conn.getResponseCode();
-                return new HttpResponse(responseCode, readAll(conn.getErrorStream()));
+                return new HttpResponse(responseCode, readAll(conn.getErrorStream(), conn.getHeaderFieldInt("Content-Length", -1)));
             }catch(IOException | NullPointerException ex){}
             return new HttpResponse(responseCode, result.toString());
         }
         return new HttpResponse(responseCode, result.toString());
     }
 
-    private static String readAll(InputStream is) throws IOException {
+    private static String readAll(InputStream is, int len) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] data = new byte[1024];
         int r;
-        while (is.available() > 0){
+        while (is.available() > 0 || len > 0){
             r = is.read(data);
             baos.write(data, 0, r);
+            len -= r;
         }
         is.close();
         return new String(baos.toByteArray(), StandardCharsets.UTF_8);
