@@ -78,28 +78,28 @@ public class HttpClient {
             }
             responseCode = conn.getResponseCode();
             if(responseCode>299){
-                result.append(readAll(conn.getErrorStream(), conn.getHeaderFieldInt("Content-Length", -1)));
+                result.append(readAll(conn.getErrorStream()));
             }else{
-                result.append(readAll(conn.getInputStream(), conn.getHeaderFieldInt("Content-Length", -1)));
+                result.append(readAll(conn.getInputStream()));
             }
         }catch(Exception e){
             try {
                 responseCode = conn.getResponseCode();
-                return new HttpResponse(responseCode, readAll(conn.getErrorStream(), conn.getHeaderFieldInt("Content-Length", -1)));
+                return new HttpResponse(responseCode, readAll(conn.getErrorStream()));
             }catch(IOException | NullPointerException ex){}
             return new HttpResponse(responseCode, result.toString());
         }
         return new HttpResponse(responseCode, result.toString());
     }
 
-    private static String readAll(InputStream is, int len) throws IOException {
+    private static String readAll(InputStream is) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] data = new byte[1024];
-        int r;
-        while (is.available() > 0 || len > 0){
+        int r = 0;
+        while (r != -1){
             r = is.read(data);
-            baos.write(data, 0, r);
-            len -= r;
+            if(r != -1)
+                baos.write(data, 0, r);
         }
         is.close();
         return new String(baos.toByteArray(), StandardCharsets.UTF_8);
