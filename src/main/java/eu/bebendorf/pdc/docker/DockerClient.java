@@ -158,6 +158,10 @@ public class DockerClient {
         return containerLogs(id, null, null, limit);
     }
 
+    public void pullImage(String name) throws RequestException {
+        httpClient.request("POST", "/images/create?fromImage="+HttpClient.urlEncode(name), null);
+    }
+
     public String containerLogs(String id, Integer since, Integer until, Integer limit) throws RequestException {
         Map<String, String> params = new HashMap<>();
         params.put("stdout", "true");
