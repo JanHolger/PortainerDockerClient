@@ -1,11 +1,14 @@
 package eu.bebendorf.pdc.docker;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import eu.bebendorf.pdc.PortainerClient;
 import eu.bebendorf.pdc.docker.model.*;
 import eu.bebendorf.pdc.exception.RequestException;
 import eu.bebendorf.pdc.http.HttpClient;
 import eu.bebendorf.pdc.model.PortainerEndpoint;
 import eu.bebendorf.pdc.request.DockerContainerCreateRequest;
+import eu.bebendorf.pdc.request.DockerNetworkConnectRequest;
 import eu.bebendorf.pdc.request.DockerVolumeCreateRequest;
 import eu.bebendorf.pdc.response.DockerContainerCreateResponse;
 import eu.bebendorf.pdc.response.DockerVolumePruneResponse;
@@ -173,6 +176,55 @@ public class DockerClient {
         if(limit != null)
             params.put("limit", String.valueOf(limit));
         return httpClient.request("GET", "/containers/"+id+"/logs?"+HttpClient.queryParams(params), String.class);
+    }
+
+    public void connectNetwork(String network, String container, String ip) throws RequestException {
+        DockerNetworkConnectRequest request = new DockerNetworkConnectRequest();
+        request.container = container;
+        request.endpointConfig = new DockerEndpointConfig();
+        request.endpointConfig.ipam = new DockerEndpointConfig.IPAMConfig();
+        request.endpointConfig.ipam.ip = ip;
+        connectNetwork(network, request);
+    }
+
+    public void connectNetwork(String network, DockerNetworkConnectRequest request) throws RequestException {
+        httpClient.request("POST", "/networks/"+network+"/connect", request, null);
+    }
+
+    public void disconnectNetwork(String network, String container) throws RequestException {
+        disconnectNetwork(network, container, false);
+    }
+
+    public void disconnectNetwork(String network, String container, boolean force) throws RequestException {
+        JsonObject request = new JsonObject();
+        request.addProperty("Container", container);
+        request.addProperty("Force", force);
+        httpClient.request("POST", "/networks/"+network+"/disconnect", request, null);
+    }
+
+    public void execCommand(String containerId, String user, String workingDir, Map<String, String> env, String... command) throws RequestException {
+        JsonObject body = new JsonObject();
+        if(workingDir != null)
+            body.addProperty("WorkingDir", workingDir);
+        if(user != null)
+            body.addProperty("User", user);
+        if(env != null){
+            JsonArray e = new JsonArray();
+            for(String k : env.keySet()){
+                e.add(k+"="+env.get(k));
+            }
+            body.add("Env", e);
+        }
+        JsonArray cmd = new JsonArray();
+        for(String c : command){
+            cmd.add(c);
+        }
+        body.add("Cmd", cmd);
+        JsonObject response = httpClient.request("POST", "/containers/"+containerId+"/exec", body, JsonObject.class);
+        String execId = response.get("Id").getAsString();
+        body = new JsonObject();
+        body.addProperty("Detach", true);
+        httpClient.request("POST", "/exec/"+execId+"/start", body, null);
     }
 
 }

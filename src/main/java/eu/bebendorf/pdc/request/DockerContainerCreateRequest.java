@@ -2,10 +2,9 @@ package eu.bebendorf.pdc.request;
 
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
+import eu.bebendorf.pdc.docker.model.DockerEndpointConfig;
 import eu.bebendorf.pdc.docker.model.DockerHostConfig;
 import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.util.ArrayList;
@@ -61,6 +60,8 @@ public class DockerContainerCreateRequest {
     String[] shell;
     @SerializedName("HostConfig")
     DockerHostConfig hostConfig = new DockerHostConfig();
+    @SerializedName("NetworkingConfig")
+    public NetworkingConfig networkingConfig = null;
     public DockerContainerCreateRequest user(String user){
         this.user = user;
         return this;
@@ -142,5 +143,9 @@ public class DockerContainerCreateRequest {
     public DockerContainerCreateRequest setTty(boolean tty){
         this.tty = tty;
         return this;
+    }
+    public static class NetworkingConfig {
+        @SerializedName("EndpointsConfig")
+        public Map<String, DockerEndpointConfig> endpointsConfig = new HashMap<>();
     }
 }
