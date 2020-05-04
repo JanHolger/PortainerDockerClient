@@ -20,7 +20,6 @@ public class WebSocket {
     @Getter
     private boolean open = false;
     public WebSocket(String url){
-        System.out.println(url);
         this.url = url;
     }
     private static URI makeURI(String string){
