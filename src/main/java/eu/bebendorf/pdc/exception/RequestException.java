@@ -1,18 +1,22 @@
 package eu.bebendorf.pdc.exception;
 
+import com.google.gson.Gson;
+import eu.bebendorf.pdc.response.DockerErrorResponse;
 import eu.bebendorf.pdc.response.PortainerErrorResponse;
 
 public class RequestException extends Exception {
-    private PortainerErrorResponse response;
-    public RequestException(PortainerErrorResponse response){
-        this.response = response;
+    private static final Gson GSON = new Gson();
+    public RequestException(String body){
+        super(body);
     }
-    public PortainerErrorResponse getResponse(){
-        return response;
+    public PortainerErrorResponse portainer(){
+        if(getMessage() == null)
+            return null;
+        return GSON.fromJson(super.getMessage(), PortainerErrorResponse.class);
     }
-    public String getMessage(){
-        if(response == null)
-            return "";
-        return response.getError();
+    public DockerErrorResponse docker(){
+        if(getMessage() == null)
+            return null;
+        return GSON.fromJson(super.getMessage(), DockerErrorResponse.class);
     }
 }

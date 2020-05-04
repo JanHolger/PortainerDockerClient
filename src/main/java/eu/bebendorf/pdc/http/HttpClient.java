@@ -33,7 +33,17 @@ public class HttpClient {
     }
 
     public <T> T request(String method, String url, Object body, Class<T> responseType) throws RequestException {
-        return requestRaw(method, url, body==null?null:GSON.toJson(body)).getBodyOrError(responseType);
+        return requestRaw(method, url, makeBody(body)).getBodyOrError(responseType);
+    }
+
+    private byte[] makeBody(Object body){
+        if(body == null)
+            return null;
+        if(body instanceof byte[])
+            return (byte[]) body;
+        if(body instanceof String)
+            return ((String) body).getBytes(StandardCharsets.UTF_8);
+        return makeBody(GSON.toJson(body));
     }
 
     public HttpResponse requestRawMultipart(String method, String url, Map<String, Object> multipart){
@@ -53,8 +63,12 @@ public class HttpClient {
         return new HttpResponse(0, "Unknown Connection Error");
     }
 
-    public HttpResponse requestRaw(String method, String url, String body){
-        StringBuilder result = new StringBuilder();
+    public HttpResponse requestRawString(String method, String url, String body){
+        return requestRaw(method, url, body.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public HttpResponse requestRaw(String method, String url, byte[] body){
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         HttpURLConnection conn = null;
         int responseCode = 0;
         try{
@@ -70,29 +84,27 @@ public class HttpClient {
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
                 OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-                writer.write(body);
-                writer.flush();
-                writer.close();
+                os.write(body);
+                os.flush();
                 os.close();
             }
             responseCode = conn.getResponseCode();
             if(responseCode>299){
-                result.append(readAll(conn.getErrorStream()));
+                baos.write(readAll(conn.getErrorStream()));
             }else{
-                result.append(readAll(conn.getInputStream()));
+                baos.write(readAll(conn.getInputStream()));
             }
         }catch(Exception e){
             try {
                 responseCode = conn.getResponseCode();
                 return new HttpResponse(responseCode, readAll(conn.getErrorStream()));
             }catch(IOException | NullPointerException ex){}
-            return new HttpResponse(responseCode, result.toString());
+            return new HttpResponse(responseCode, baos.toByteArray());
         }
-        return new HttpResponse(responseCode, result.toString());
+        return new HttpResponse(responseCode, baos.toByteArray());
     }
 
-    private static String readAll(InputStream is) throws IOException {
+    private static byte[] readAll(InputStream is) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] data = new byte[1024];
         int r = 0;
@@ -102,7 +114,7 @@ public class HttpClient {
                 baos.write(data, 0, r);
         }
         is.close();
-        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        return baos.toByteArray();
     }
 
     public WebSocket webSocket(String url){

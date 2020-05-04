@@ -83,4 +83,19 @@ public class DockerContainer {
     public String logs(Integer since, Integer until, Integer limit) throws RequestException {
         return client.containerLogs(id, since, until, limit);
     }
+    public byte[] archive(String path) throws RequestException {
+        return client.containerArchive(id, path);
+    }
+    public byte[] file(String path) throws RequestException {
+        return client.containerFile(id, path);
+    }
+    public void archive(String path, byte[] archive) throws RequestException {
+        client.containerArchive(id, path, archive);
+    }
+    public void archive(String path, byte[] archive, Boolean noOverwriteDirNonDir, Boolean copyUIDGID) throws RequestException {
+        client.containerArchive(id, path, archive, noOverwriteDirNonDir, copyUIDGID);
+    }
+    public void file(String path, byte[] file) throws RequestException {
+        client.containerFile(id, path, file);
+    }
 }

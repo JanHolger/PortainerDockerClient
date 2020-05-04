@@ -2,7 +2,6 @@ package eu.bebendorf.pdc.docker;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import eu.bebendorf.pdc.PortainerClient;
 import eu.bebendorf.pdc.docker.model.*;
 import eu.bebendorf.pdc.exception.RequestException;
 import eu.bebendorf.pdc.http.HttpClient;
@@ -15,11 +14,15 @@ import eu.bebendorf.pdc.response.DockerVolumePruneResponse;
 import eu.bebendorf.pdc.utils.WebSocket;
 import lombok.Getter;
 import lombok.Setter;
+import org.kamranzafar.jtar.TarEntry;
+import org.kamranzafar.jtar.TarHeader;
+import org.kamranzafar.jtar.TarInputStream;
+import org.kamranzafar.jtar.TarOutputStream;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
 
 public class DockerClient {
 
@@ -176,6 +179,56 @@ public class DockerClient {
         if(limit != null)
             params.put("limit", String.valueOf(limit));
         return httpClient.request("GET", "/containers/"+id+"/logs?"+HttpClient.queryParams(params), String.class);
+    }
+
+    public byte[] containerArchive(String id, String path) throws RequestException {
+        return httpClient.request("GET", "/containers/"+id+"/archive?path="+HttpClient.urlEncode(path), byte[].class);
+    }
+
+    public byte[] containerFile(String id, String path) throws RequestException {
+        try {
+            TarInputStream is = new TarInputStream(new ByteArrayInputStream(containerArchive(id, path)));
+            TarEntry entry = is.getNextEntry();
+            if(entry == null)
+                return null;
+            int r;
+            byte[] d = new byte[1024];
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            while ((r = is.read(d)) != -1){
+                baos.write(d, 0, r);
+            }
+            return baos.toByteArray();
+        }catch (IOException ex){}
+        return null;
+    }
+
+    public void containerArchive(String id, String path, byte[] archive) throws RequestException {
+        containerArchive(id, path, archive, null, null);
+    }
+
+    public void containerArchive(String id, String path, byte[] archive, Boolean noOverwriteDirNonDir, Boolean copyUIDGID) throws RequestException {
+        Map<String, String> params = new HashMap<>();
+        params.put("path", path);
+        if(noOverwriteDirNonDir != null)
+            params.put("noOverwriteDirNonDir", noOverwriteDirNonDir?"1":"0");
+        if(copyUIDGID != null)
+            params.put("copyUIDGID", copyUIDGID?"1":"0");
+        httpClient.request("PUT", "/containers/"+id+"/archive?"+HttpClient.queryParams(params), archive, null);
+    }
+
+    public void containerFile(String id, String path, byte[] data) throws RequestException {
+        try {
+            String[] spl = path.split("/");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            TarOutputStream tos = new TarOutputStream(baos);
+            TarEntry entry = new TarEntry(new TarHeader());
+            entry.setName(spl[spl.length-1]);
+            entry.setSize(data.length);
+            tos.putNextEntry(entry);
+            tos.write(data);
+            tos.close();
+            containerArchive(id, String.join("/", Arrays.copyOfRange(spl, 0, spl.length-1)), baos.toByteArray());
+        }catch (IOException ex){}
     }
 
     public void connectNetwork(String network, String container, String ip) throws RequestException {
