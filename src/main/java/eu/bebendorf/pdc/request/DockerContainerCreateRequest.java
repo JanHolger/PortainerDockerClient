@@ -74,6 +74,14 @@ public class DockerContainerCreateRequest {
         this.macAddress = macAddress;
         return this;
     }
+    public DockerContainerCreateRequest openStdin(boolean openStdin){
+        this.openStdin = openStdin;
+        return this;
+    }
+    public DockerContainerCreateRequest stdinOnce(boolean stdinOnce){
+        this.stdinOnce = stdinOnce;
+        return this;
+    }
     public DockerContainerCreateRequest label(String key){
         return label(key, "");
     }
